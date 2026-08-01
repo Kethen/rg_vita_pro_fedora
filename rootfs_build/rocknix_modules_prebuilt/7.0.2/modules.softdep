@@ -1,0 +1,5 @@
+# Soft dependencies extracted from modules themselves.
+softdep panfrost pre: governor_simpleondemand
+softdep xt_NFLOG pre: nfnetlink_log
+softdep xt_LOG pre: nf_log_syslog
+softdep mali_kbase pre: memory_group_manager

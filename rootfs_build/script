@@ -1,0 +1,41 @@
+set -xe
+
+useradd fedora
+usermod fedora -a -G wheel
+printf 'fedora\nfedora\n' | passwd fedora
+passwd -l root
+
+systemctl set-default graphical.target
+
+mkdir staging
+tar -cO afs bin boot etc home lib lib64 media opt root run sbin srv usr var | tar -C staging -x
+
+for f in dev mnt proc sys tmp
+do
+	mkdir staging/$f
+done
+
+#cp -r /work_dir/armbian_build/config/optional/boards/anbernic-rg-vita-pro/_packages/bsp-cli/* staging/
+#ln -s /etc/systemd/system/vita-jack-switch.service staging/etc/systemd/system/graphical.target.wants/
+#ln -s /etc/systemd/system/vita-pad2key.service staging/etc/systemd/system/graphical.target.wants/
+cp -r /work_dir/rocknix_modules_prebuilt/7.0.2 staging/usr/lib/modules/
+cp -r /work_dir/anbernic_modules_prebuilt/6.1.99 staging/usr/lib/modules/
+mkdir -p staging/usr/share/alsa/ucm2/conf.d
+cp -r /work_dir/rocknix_distribution/projects/ROCKNIX/packages/audio/alsa-ucm-conf/sources/ucm2/Rockchip staging/usr/share/alsa/ucm2/
+cp -r /work_dir/rocknix_distribution/projects/ROCKNIX/packages/audio/alsa-ucm-conf/sources/ucm2/conf.d/simple-card staging/usr/share/alsa/ucm2/conf.d/
+cp /work_dir/vita.service staging/etc/systemd/system/
+cp /work_dir/vita.sh staging/usr/libexec/
+ln -s /etc/systemd/system/vita.service staging/etc/systemd/system/graphical.target.wants/
+
+# need to figure out proper kernel building to enable user ns
+cp /usr/lib/systemd/system/upower.service staging/etc/systemd/system/
+sed -i 's/PrivateUsers=yes/#PrivateUsers=yes/' staging/etc/systemd/system/upower.service 
+sed -i 's/RestrictNamespaces=yes/#RestrictNamespaces=yes/' staging/etc/systemd/system/upower.service 
+
+# add flathub
+flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+
+
+cd staging
+
+tar -cf ../work_dir/rootfs.tar .

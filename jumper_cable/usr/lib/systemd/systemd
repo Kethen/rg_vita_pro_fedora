@@ -1,0 +1,52 @@
+#!/bin/ash
+
+# noinitrd does not seem to work on this kernel
+
+DEBUG=false
+
+export PATH=/bin:/sbin:/usr/bin:/usr/sbin
+
+echo rocknix jumper_cable begin
+
+if $DEBUG
+then
+	echo args from rocknix initrd: "$@"
+	echo boot cmdline: $(cat /proc/cmdline)
+	echo current /dev:
+	ls /dev
+	echo blkid:
+	blkid
+	echo current mounts:
+	cat /proc/mounts
+fi
+
+boot_target=$(blkid | grep 'LABEL="FEDORA"' | awk '{print $1}' | sed 's/://')
+if [ -n "$boot_target" ]
+then
+	echo fedora rootfs located as $boot_target
+else
+	echo fedora rootfs not located, rebooting in 60 seconds
+	sleep 60
+	reboot
+fi
+
+mount -t ext4 $boot_target /next_root
+
+if $DEBUG
+then
+	ls /dev > /next_root/early_devs
+	blkid > /next_root/early_blkid
+	sync
+fi
+
+if $DEBUG
+then
+	echo switching root in 20 seconds
+	sleep 10
+	echo switching root in 10 seconds
+	sleep 10
+fi
+
+echo switching root...
+
+exec switch_a_root /next_root /sbin/init

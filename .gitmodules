@@ -1,0 +1,6 @@
+[submodule "armbian_build"]
+	path = rootfs_build/armbian_build
+	url = https://github.com/armbian/build
+[submodule "rootfs_build/rocknix_distribution"]
+	path = rootfs_build/rocknix_distribution
+	url = https://github.com/ROCKNIX/distribution

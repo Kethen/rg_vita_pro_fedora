@@ -1,0 +1,8 @@
+[Unit]
+description="oneshot setup for anbernic rg vita pro"
+
+[Service]
+ExecStart=/bin/bash /usr/libexec/vita.sh
+
+[Install]
+WantedBy=graphical.target
