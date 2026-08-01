@@ -12,9 +12,8 @@ fi
 
 podman run \
 	--rm -it \
-	-v ./:/work_dir \
-	-w / \
+	-v ../:/work_dir \
 	--arch aarch64 \
 	--entrypoint /bin/bash \
 	localhost/$IMAGE_TAG \
-	/work_dir/script
+	/work_dir/rootfs_build/script
