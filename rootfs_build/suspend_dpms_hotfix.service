@@ -1,0 +1,10 @@
+[Unit]
+Description="dpms suspend hotfix"
+
+[Service]
+ExecStart=/bin/python3 /usr/libexec/suspend_dpms_hotfix.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical-session.target

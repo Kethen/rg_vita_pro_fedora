@@ -15,17 +15,31 @@ do
 	mkdir staging/$f
 done
 
-#cp -r /work_dir/ext/armbian_build/config/optional/boards/anbernic-rg-vita-pro/_packages/bsp-cli/* staging/
-#ln -s /etc/systemd/system/vita-jack-switch.service staging/etc/systemd/system/graphical.target.wants/
-#ln -s /etc/systemd/system/vita-pad2key.service staging/etc/systemd/system/graphical.target.wants/
+# the joysticks are not sensors
+cp /work_dir/ext/armbian_build/config/optional/boards/anbernic-rg-vita-pro/_packages/bsp-cli/etc/udev/rules.d/60-vita-joypad-not-accel.rules staging/etc/udev/rules.d/
+
+# kernel modules
 cp -r /work_dir/rootfs_build/rocknix_modules_prebuilt/7.0.2 staging/usr/lib/modules/
 cp -r /work_dir/rootfs_build/anbernic_modules_prebuilt/6.1.99 staging/usr/lib/modules/
+
+# bluetooth firmware
+cp -r /work_dir/ext/rocknix_distribution/projects/ROCKNIX/packages/linux-firmware/kernel-firmware/extra-firmware/rtl_bt/rtl8852bs_* staging/usr/lib/firmware/rtl_bt/
+
+# ucm config
 mkdir -p staging/usr/share/alsa/ucm2/conf.d
 cp -r /work_dir/ext/rocknix_distribution/projects/ROCKNIX/packages/audio/alsa-ucm-conf/sources/ucm2/Rockchip staging/usr/share/alsa/ucm2/
 cp -r /work_dir/ext/rocknix_distribution/projects/ROCKNIX/packages/audio/alsa-ucm-conf/sources/ucm2/conf.d/simple-card staging/usr/share/alsa/ucm2/conf.d/
+
+# boot hacks
 cp /work_dir/rootfs_build/vita.service staging/etc/systemd/system/
 cp /work_dir/rootfs_build/vita.sh staging/usr/libexec/
 ln -s /etc/systemd/system/vita.service staging/etc/systemd/system/graphical.target.wants/
+
+# dpms off suspend workaround
+cp /work_dir/rootfs_build/suspend_dpms_hotfix.service staging/etc/systemd/user
+cp /work_dir/rootfs_build/suspend_dpms_hotfix.py staging/usr/libexec/
+mkdir -p staging/etc/systemd/user/graphical-session.target.wants
+ln -s /etc/systemd/user/suspend_dpms_hotfix.service staging/etc/systemd/user/graphical-session.target.wants/
 
 # need to figure out proper kernel building to enable user ns
 cp /usr/lib/systemd/system/upower.service staging/etc/systemd/system/

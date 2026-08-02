@@ -2,6 +2,7 @@ set -xe
 
 script_dir=$(realpath "$0")
 script_dir=$(dirname "$0")
+cd "$script_dir"
 
 IMAGE_TAG=rg_vita_pro_fedora_rootfs
 

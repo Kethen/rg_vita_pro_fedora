@@ -1,5 +1,5 @@
 [Unit]
-description="oneshot setup for anbernic rg vita pro"
+Description="oneshot setup for anbernic rg vita pro"
 
 [Service]
 ExecStart=/bin/bash /usr/libexec/vita.sh
