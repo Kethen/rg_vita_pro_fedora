@@ -17,7 +17,7 @@ losetup -P $loop_dev fedora.img
 
 mkfs.ext4 -L FEDORA ${loop_dev}p2
 mount ${loop_dev}p2 root_partition
-tar -C root_partition -xf rootfs_build/rootfs.tar
+tar -C root_partition -xf rootfs.tar
 
 echo "LABEL=FEDORA / ext4 defaults 0 1" >> root_partition/etc/fstab
 
