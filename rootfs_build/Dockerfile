@@ -10,7 +10,7 @@ RUN dnf install -y python3-evdev python3-libevdev
 RUN dnf install -y alsa-utils
 
 # extra packages
-RUN dnf install -y busybox linux-firmware procps-ng iproute bash-completion fdisk nano less file vulkan-tools tmux
+RUN dnf install -y busybox linux-firmware procps-ng iproute bash-completion fdisk nano less file vulkan-tools tmux lsof
 
 # DE
 RUN dnf group install -y gnome-desktop
