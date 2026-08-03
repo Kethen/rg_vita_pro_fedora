@@ -21,4 +21,4 @@ RUN dnf install -y 'NetworkManager*'
 #RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 #RUN flatpak install flathub -y org.mozilla.firefox org.videolan.VLC
 
-RUN dnf install -y firefox nextcloud-client
+RUN dnf install -y firefox nextcloud-client vlc
