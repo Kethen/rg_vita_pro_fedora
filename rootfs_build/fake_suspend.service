@@ -1,0 +1,6 @@
+[Unit]
+Description=Fake suspend
+
+[Service]
+ExecStart=python3 /usr/libexec/fake_suspend.py
+

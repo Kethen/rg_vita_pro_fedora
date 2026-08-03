@@ -1,0 +1,10 @@
+[Unit]
+Description="oneshot setup for libmali"
+Before=graphical.target
+
+[Service]
+ExecStart=/bin/bash /usr/libexec/libmali.sh
+Type=oneshot
+
+[Install]
+WantedBy=multi-user.target

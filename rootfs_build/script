@@ -33,6 +33,7 @@ cp -r /work_dir/ext/rocknix_distribution/projects/ROCKNIX/packages/audio/alsa-uc
 # boot hacks
 cp /work_dir/rootfs_build/vita.service staging/etc/systemd/system/
 cp /work_dir/rootfs_build/vita.sh staging/usr/libexec/
+mkdir -p staging/etc/systemd/system/graphical.target.wants
 ln -s /etc/systemd/system/vita.service staging/etc/systemd/system/graphical.target.wants/
 
 # dpms off suspend workaround
@@ -40,6 +41,24 @@ cp /work_dir/rootfs_build/suspend_dpms_hotfix.service staging/etc/systemd/user
 cp /work_dir/rootfs_build/suspend_dpms_hotfix.py staging/usr/libexec/
 mkdir -p staging/etc/systemd/user/graphical-session.target.wants
 ln -s /etc/systemd/user/suspend_dpms_hotfix.service staging/etc/systemd/user/graphical-session.target.wants/
+
+# fake suspend fallback
+cp /work_dir/rootfs_build/fake_suspend.py staging/usr/libexec
+cp /work_dir/rootfs_build/fake_suspend.service staging/etc/systemd/system/
+
+if true
+then
+	# libmali setup
+	cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/* staging/
+	cp /work_dir/rootfs_build/libmali.service staging/etc/systemd/system/
+	cp /work_dir/rootfs_build/libmali.sh staging/usr/libexec/
+	mkdir -p staging/etc/systemd/system/multi-user.target.wants
+	ln -s /etc/systemd/system/libmali.service staging/etc/systemd/system/multi-user.target.wants/
+
+	# cannot suspend properly with mali_kbase loaded
+	rm staging/etc/systemd/user/graphical-session.target.wants/suspend_dpms_hotfix.service
+	ln -s /etc/systemd/system/fake_suspend.service staging/etc/systemd/system/systemd-suspend.service
+fi
 
 # need to figure out proper kernel building to enable user ns
 cp /usr/lib/systemd/system/upower.service staging/etc/systemd/system/
