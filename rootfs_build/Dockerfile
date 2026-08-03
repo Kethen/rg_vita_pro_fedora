@@ -10,7 +10,7 @@ RUN dnf install -y python3-evdev python3-libevdev
 RUN dnf install -y alsa-utils
 
 # extra packages
-RUN dnf install -y busybox linux-firmware procps-ng iproute bash-completion fdisk nano less file vulkan-tools tmux lsof
+RUN dnf install -y busybox linux-firmware procps-ng iproute bash-completion fdisk nano less file vulkan-tools tmux lsof evtest
 
 # DE
 RUN dnf group install -y gnome-desktop
@@ -22,3 +22,7 @@ RUN dnf install -y 'NetworkManager*'
 #RUN flatpak install flathub -y org.mozilla.firefox org.videolan.VLC
 
 RUN dnf install -y firefox nextcloud-client vlc
+
+# zram
+RUN dnf install -y zram
+RUN systemctl enable zram-swap
