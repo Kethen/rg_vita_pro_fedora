@@ -150,6 +150,8 @@ struct abs_calibration{
 };
 
 int convert(struct abs_calibration *calibration, struct input_absinfo &info_x, struct input_absinfo & info_y, int x, int y, bool ret_x){
+	const static double amplification = 1.1;
+
 	double width = x - info_x.value;
 	double height = y - info_y.value;
 	double hypotenuse = sqrt(pow(width, 2) + pow(height, 2));
@@ -183,7 +185,7 @@ int convert(struct abs_calibration *calibration, struct input_absinfo &info_x, s
 		calibration[deg].max = hypotenuse;
 	}
 
-	int adjusted_hypotenuse = (hypotenuse_int * 32767) / calibration[deg].max;
+	int adjusted_hypotenuse = ((hypotenuse_int * 32767) / calibration[deg].max) * amplification;
 
 	//printf("%s: %d %d %d\n", __func__, hypotenuse_int, adjusted_hypotenuse, calibration[deg].max);
 
@@ -227,8 +229,8 @@ void joystick_poller(int joystick_fd, int uinput_fd, std::mutex &uinput_fd_mutex
 	int rx = info_rx.value;
 	int ry = info_ry.value;
 
-	struct abs_calibration calibration_l[360] = {0};
-	struct abs_calibration calibration_r[360] = {0};
+	static struct abs_calibration calibration_l[361] = {0};
+	static struct abs_calibration calibration_r[361] = {0};
 
 	struct input_event event = {0};
 	while (true){
