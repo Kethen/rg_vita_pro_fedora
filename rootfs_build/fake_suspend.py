@@ -2,6 +2,8 @@ import os
 import os.path
 import re
 import evdev
+import threading
+import time
 
 power_key_dev_name = "rk805 pwrkey"
 power_key_code = 116
@@ -131,7 +133,7 @@ def cpu_level(up):
 		try:
 			write_file(cpu_online_path, to_write)
 		except:
-			print("stopped cpu 1 - {0}".format(cpu_num - 1))
+			print("toggled cpu 1 - {0}".format(cpu_num - 1))
 			break
 		cpu_num = cpu_num + 1
 
@@ -185,20 +187,59 @@ def toggle_suspend(skip_backlight, devices):
 		freeze_apps()
 	suspended = not suspended
 
+def powmon(control):
+	directories = os.listdir("/sys/class/power_supply")
+	target_paths = []
+	for item in directories:
+		current_path = "/sys/class/power_supply/{0}/current_now".format(item)
+		voltage_path = "/sys/class/power_supply/{0}/voltage_now".format(item)
+		if os.path.exists(current_path):
+			target_paths.append(current_path)
+		if os.path.exists(voltage_path):
+			target_paths.append(voltage_path)
+
+	while True:
+		if control["stop"]:
+			break
+		for path in target_paths:
+			print("{0}: {1}".format(path, read_file(path)))
+		time.sleep(2)
+
+
 def daemon_mode(devices, power_key_dev):
 	power_key_dev.grab()
+
+	use_powmon = False
+
+	powmon_control = {"stop":False}
+	if use_powmon:
+		powmon_thread = threading.Thread(target=powmon, args=[powmon_control])
+		powmon_thread.start()
+
 	for event in power_key_dev.read_loop():
 		if event.code == power_key_code and event.value == 0:
 			toggle_suspend(False, devices)
 
 def oneshot_mode(devices, power_key_dev):
 	power_key_dev.grab()
+
+	use_powmon = False
+
+	powmon_control = {"stop":False}
+	if use_powmon:
+		powmon_thread = threading.Thread(target=powmon, args=[powmon_control])
+		powmon_thread.start()
+
 	toggle_suspend(False, devices)
 	for event in power_key_dev.read_loop():
 		if event.code == power_key_code and event.value == 0:
 			toggle_suspend(False, devices)
 			power_key_dev.ungrab()
 			break
+
+	if use_powmon:
+		powmon_control["stop"] = True
+		powmon_thread.join()
 
 devices = open_evdevs()
 power_key_dev = find_device_by_name(devices, power_key_dev_name)
