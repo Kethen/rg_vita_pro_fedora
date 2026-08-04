@@ -58,7 +58,17 @@ then
 	# cannot suspend properly with mali_kbase loaded
 	rm staging/etc/systemd/user/graphical-session.target.wants/suspend_dpms_hotfix.service
 	ln -s /etc/systemd/system/fake_suspend.service staging/etc/systemd/system/systemd-suspend.service
+
+	# need to work around qt rendering for nextcloud
+	mkdir -p staging/usr/local/bin/
+	cp /work_dir/rootfs_build/nextcloud staging/usr/local/bin/
 fi
+
+# controller conversion
+cp /work_dir/rootfs_build/vita_controller.service staging/etc/systemd/system/
+cp /work_dir/rootfs_build/vita_controller staging/usr/libexec/
+mkdir -p staging/etc/systemd/user/graphical-session.target.wants
+ln -s /etc/systemd/system/vita_controller.service staging/etc/systemd/user/graphical-session.target.wants/
 
 # need to figure out proper kernel building to enable user ns
 cp /usr/lib/systemd/system/upower.service staging/etc/systemd/system/
