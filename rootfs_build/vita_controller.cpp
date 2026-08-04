@@ -7,11 +7,16 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <linux/uinput.h>
+#include <poll.h>
 
 #include <thread>
 #include <mutex>
 #include <string>
 #include <filesystem>
+
+#define CALIBRATION_FILE "/etc/vita_controller_calibration"
+#define CALIBRATION_FOLD 10
+#define CALIBRATION_SLOTS ((360 / CALIBRATION_FOLD) + 1)
 
 int setup_uinput(){
 	int fd = open("/dev/uinput", O_WRONLY | O_NONBLOCK);
@@ -149,45 +154,225 @@ struct abs_calibration{
 	int max;
 };
 
-int convert(struct abs_calibration *calibration, struct input_absinfo &info_x, struct input_absinfo & info_y, int x, int y, bool ret_x){
-	const static double amplification = 1.1;
+void save_calibration(std::string path, const struct abs_calibration *calibration_l, const struct abs_calibration *calibration_r){
+	FILE *file = fopen(path.c_str(), "wb");
+	if (file == NULL){
+		printf("%s: failed opening %s for writing\n", __func__, path.c_str());
+		exit(1);
+	}
 
-	double width = x - info_x.value;
-	double height = y - info_y.value;
-	double hypotenuse = sqrt(pow(width, 2) + pow(height, 2));
-	double rad = asin(height / hypotenuse);
-	int deg = (rad * 180) / M_PI;
+	for (int i = 0;i < CALIBRATION_SLOTS;i++){
+		int write_status = fwrite(&calibration_l[i].max, sizeof(calibration_l[i].max), 1, file);
+		if (write_status != 1){
+			printf("%s: failed writing to %s\n", __func__, path.c_str());
+			exit(1);
+		}
+	}
+
+	for (int i = 0;i < CALIBRATION_SLOTS;i++){
+		int write_status = fwrite(&calibration_r[i].max, sizeof(calibration_r[i].max), 1, file);
+		if (write_status != 1){
+			printf("%s: failed writing to %s\n", __func__, path.c_str());
+			exit(1);
+		}
+	}
+
+	fclose(file);
+}
+
+bool read_calibration(std::string path, struct abs_calibration *calibration_l, struct abs_calibration *calibration_r){
+	FILE *file = fopen(path.c_str(), "rb");
+	if (file == NULL){
+		printf("%s: failed opening %s for reading\n", __func__, path.c_str());
+		return false;
+	}
+
+	for (int i = 0;i < CALIBRATION_SLOTS;i++){
+		int read_status = fread(&calibration_l[i].max, sizeof(calibration_l[i].max), 1, file);
+		if (read_status != 1){
+			printf("%s: failed reading from %s\n", __func__, path.c_str());
+			fclose(file);
+			return false;
+		}
+	}
+
+	for (int i = 0;i < CALIBRATION_SLOTS;i++){
+		int read_status = fread(&calibration_r[i].max, sizeof(calibration_r[i].max), 1, file);
+		if (read_status != 1){
+			printf("%s: failed reading from %s\n", __func__, path.c_str());
+			fclose(file);
+			return false;
+		}
+	}
+
+	fclose(file);
+	return true;
+}
+
+void get_hypotenuse_slot_rad_width_height(double &hypotenuse, int &slot, double &rad, double &width, double &height, struct input_absinfo &info_x, struct input_absinfo &info_y, int x, int y){
+	width = x - info_x.value;
+	height = y - info_y.value;
+	hypotenuse = sqrt(pow(width, 2) + pow(height, 2));
+	rad = asin(height / hypotenuse);
+	slot = (rad * 180) / M_PI;
 
 	if (width < 0 && height >= 0){
 		// top left
-		deg = 90 + (90 - deg);
+		slot = 90 + (90 - slot);
 	}else if (width < 0 && height < 0){
 		// bottom left
-		deg = 180 + deg * -1;
+		slot = 180 + slot * -1;
 	}else if (width >= 0 && height < 0){
 		// bottom right
-		deg = 270 + (90 - deg * -1);
+		slot = 270 + (90 - slot * -1);
 	}
-	if (deg > 360){
-		deg = 360;
+	if (slot > 360){
+		slot = 360;
 	}
-	if (deg < 0){
-		deg = 0;
+	if (slot < 0){
+		slot = 0;
 	}
 
-	//printf("%s: %d\n", __func__, deg);
+	slot = slot / CALIBRATION_FOLD;
+}
+
+bool would_block(){
+	return errno == EWOULDBLOCK || errno == EAGAIN;
+}
+
+void print_calibration(struct abs_calibration *calibration){
+	for (int i = 0;i < CALIBRATION_SLOTS;i++){
+		printf("%d %d\n", i, calibration[i].max);
+	}
+}
+
+void calibrate(int joystick_fd){
+	struct input_absinfo info_lx = {0};
+	struct input_absinfo info_ly = {0};
+	struct input_absinfo info_rx = {0};
+	struct input_absinfo info_ry = {0};
+	ioctl(joystick_fd, EVIOCGABS(ABS_X), &info_lx);
+	ioctl(joystick_fd, EVIOCGABS(ABS_Y), &info_ly);
+	ioctl(joystick_fd, EVIOCGABS(ABS_RX), &info_rx);
+	ioctl(joystick_fd, EVIOCGABS(ABS_RY), &info_ry);
+
+	static struct abs_calibration calibration_l[CALIBRATION_SLOTS] = {0};
+	static struct abs_calibration calibration_r[CALIBRATION_SLOTS] = {0};
+
+	int lx = info_lx.value;
+	int ly = info_ly.value;
+	int rx = info_rx.value;
+	int ry = info_ry.value;
+
+	printf("%s: now slowly and gently rotate the analog sticks, when done, press enter\n", __func__);
+
+	struct input_event event = {0};
+	while (true){
+		struct pollfd pfd[2] = {0};
+		pfd[0].fd = joystick_fd;
+		pfd[1].fd = 1;
+		pfd[0].events = POLLIN;
+		pfd[1].events = POLLIN;
+		poll(pfd, 2, -1);
+
+		if (pfd[1].revents) {
+			break;
+		}
+
+		if (!(pfd[0].revents | POLLIN)){
+			printf("%s: device poll error!\n", __func__);
+			exit(1);
+		}
+
+		int read_status = read(joystick_fd, &event, sizeof(event));
+		if (read_status != sizeof(event)){
+			printf("%s: device read error!\n", __func__);
+			exit(1);
+		}
+
+		if (event.type != EV_ABS){
+			continue;
+		}
+		switch(event.code){
+			case ABS_X:
+				lx = event.value;
+				break;
+			case ABS_Y:
+				ly = event.value;
+				break;
+			case ABS_RX:
+				rx = event.value;
+				break;
+			case ABS_RY:
+				ry = event.value;
+				break;
+		}
+
+		double hypotenuse_l;
+		double hypotenuse_r;
+		int slot_l;
+		int slot_r;
+		double rad_l;
+		double rad_r;
+		double width_l;
+		double width_r;
+		double height_l;
+		double height_r;
+
+		get_hypotenuse_slot_rad_width_height(hypotenuse_l, slot_l, rad_l, width_l, height_l, info_lx, info_ly, lx, ly);
+		get_hypotenuse_slot_rad_width_height(hypotenuse_r, slot_r, rad_r, width_r, height_r, info_rx, info_ry, rx, ry);
+
+		int hypotenuse_l_int = hypotenuse_l;
+		int hypotenuse_r_int = hypotenuse_r;
+		if (hypotenuse_l_int > 32767){
+			hypotenuse_l_int = 32767;
+		}
+		if (hypotenuse_r_int > 32767){
+			hypotenuse_r_int = 32767;
+		}
+
+		if (calibration_l[slot_l].max < hypotenuse_l_int){
+			calibration_l[slot_l].max = hypotenuse_l_int;
+		}
+
+		if (calibration_r[slot_r].max < hypotenuse_r_int){
+			calibration_r[slot_r].max = hypotenuse_r_int;
+		}
+	}
+
+	print_calibration(calibration_l);
+	print_calibration(calibration_r);
+
+	save_calibration(CALIBRATION_FILE, calibration_l, calibration_r);
+
+	printf("%s: calibration done\n", __func__);
+}
+
+
+
+int convert(struct abs_calibration *calibration, struct input_absinfo &info_x, struct input_absinfo &info_y, int x, int y, bool ret_x, bool otf_calibration){
+	const static double amplification = 1.1;
+
+	double hypotenuse;
+	int slot;
+	double rad;
+	double width;
+	double height;
+	get_hypotenuse_slot_rad_width_height(hypotenuse, slot, rad, width, height, info_x, info_y, x, y);
 
 	int hypotenuse_int = hypotenuse;
 	if (hypotenuse_int > 32767){
 		hypotenuse_int = 32767;
 	}
-	if (hypotenuse_int > calibration[deg].max){
-		calibration[deg].max = hypotenuse;
+	if (otf_calibration){
+		if (hypotenuse_int > calibration[slot].max){
+			calibration[slot].max = hypotenuse;
+		}
 	}
 
-	int adjusted_hypotenuse = ((hypotenuse_int * 32767) / calibration[deg].max) * amplification;
+	int adjusted_hypotenuse = ((hypotenuse_int * 32767 * amplification) / calibration[slot].max);
 
-	//printf("%s: %d %d %d\n", __func__, hypotenuse_int, adjusted_hypotenuse, calibration[deg].max);
+	//printf("%s: %d %d %d\n", __func__, hypotenuse_int, adjusted_hypotenuse, calibration[slot].max);
 
 	if (!ret_x){
 		int new_height = sin(rad) * adjusted_hypotenuse;
@@ -202,13 +387,12 @@ int convert(struct abs_calibration *calibration, struct input_absinfo &info_x, s
 	int new_width = cos(rad) * adjusted_hypotenuse;
 	if (width < 0){
 		new_width = new_width * -1;
-		if (new_width < -32768){
-			new_width = -32768;
-		}else{
-			if (new_width > 32767){
-				new_width = 32767;
-			}
-		}
+	}
+	if (new_width < -32768){
+		new_width = -32768;
+	}
+	if (new_width > 32767){
+		new_width = 32767;
 	}
 	return new_width;
 }
@@ -229,8 +413,17 @@ void joystick_poller(int joystick_fd, int uinput_fd, std::mutex &uinput_fd_mutex
 	int rx = info_rx.value;
 	int ry = info_ry.value;
 
-	static struct abs_calibration calibration_l[361] = {0};
-	static struct abs_calibration calibration_r[361] = {0};
+	static struct abs_calibration calibration_l[CALIBRATION_SLOTS] = {0};
+	static struct abs_calibration calibration_r[CALIBRATION_SLOTS] = {0};
+
+	bool has_calibration_file = read_calibration(CALIBRATION_FILE, calibration_l, calibration_r);
+	if (!has_calibration_file){
+		printf("%s: no calibration file loaded, calibrating on the fly\n", __func__);
+	} else {
+		printf("%s: calibration file loaded\n", __func__);
+		print_calibration(calibration_l);
+		print_calibration(calibration_r);
+	}
 
 	struct input_event event = {0};
 	while (true){
@@ -253,10 +446,10 @@ void joystick_poller(int joystick_fd, int uinput_fd, std::mutex &uinput_fd_mutex
 					new_event.value = conv; \
 					send_event = true; \
 					break;
-				CONV(ABS_X, EV_ABS, ABS_X, lx = event.value, convert(calibration_l, info_lx, info_ly, lx, ly, true))
-				CONV(ABS_Y, EV_ABS, ABS_Y, ly = event.value, convert(calibration_l, info_lx, info_ly, lx, ly, false))
-				CONV(ABS_RX, EV_ABS, ABS_RX, rx = event.value, convert(calibration_r, info_rx, info_ry, rx, ry, true))
-				CONV(ABS_RY, EV_ABS, ABS_RY, ry = event.value, convert(calibration_r, info_rx, info_ry, rx, ry, false))
+				CONV(ABS_X, EV_ABS, ABS_X, lx = event.value, convert(calibration_l, info_lx, info_ly, lx, ly, true, !has_calibration_file))
+				CONV(ABS_Y, EV_ABS, ABS_Y, ly = event.value, convert(calibration_l, info_lx, info_ly, lx, ly, false, !has_calibration_file))
+				CONV(ABS_RX, EV_ABS, ABS_RX, rx = event.value, convert(calibration_r, info_rx, info_ry, rx, ry, true, !has_calibration_file))
+				CONV(ABS_RY, EV_ABS, ABS_RY, ry = event.value, convert(calibration_r, info_rx, info_ry, rx, ry, false, !has_calibration_file))
 				#undef CONV
 			}
 		}
@@ -272,11 +465,23 @@ void joystick_poller(int joystick_fd, int uinput_fd, std::mutex &uinput_fd_mutex
 	}
 }
 
-int main(){
+int main(int argc, char **argv){
 	int uinput_fd = setup_uinput();
 	std::mutex uinput_fd_mutex;
 	int button_fd = open_device("gamepad-keys");
 	int joystick_fd = open_device("MCU Joypad");
+
+	if (argc >= 2){
+		if (strcmp("calibrate", argv[1]) == 0){
+			calibrate(joystick_fd);
+			return 0;
+		}else{
+			printf("usage:\n");
+			printf("driver mode: %s\n", argv[0]);
+			printf("calibration mode: %s calibration\n", argv[0]);
+			exit(1);
+		}
+	}
 
 	auto button_poller_thread = std::thread(button_poller, button_fd, uinput_fd, std::ref(uinput_fd_mutex));
 	auto joystick_poller_thread = std::thread(joystick_poller, joystick_fd, uinput_fd, std::ref(uinput_fd_mutex));
