@@ -236,10 +236,6 @@ void get_hypotenuse_slot_rad_width_height(double &hypotenuse, int &slot, double 
 	slot = slot / CALIBRATION_FOLD;
 }
 
-bool would_block(){
-	return errno == EWOULDBLOCK || errno == EAGAIN;
-}
-
 void print_calibration(struct abs_calibration *calibration){
 	for (int i = 0;i < CALIBRATION_SLOTS;i++){
 		printf("%d %d\n", i, calibration[i].max);
