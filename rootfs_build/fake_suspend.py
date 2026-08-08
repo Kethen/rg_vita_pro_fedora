@@ -173,7 +173,7 @@ def toggle_suspend(skip_backlight, devices):
 		if not skip_backlight:
 			backlight_control(True)
 		led_control(True)
-		cpu_level(True)
+		#cpu_level(True)
 		radio_state(True)
 		unfreeze_apps()
 	else:
@@ -182,7 +182,7 @@ def toggle_suspend(skip_backlight, devices):
 		if not skip_backlight:
 			backlight_control(False)
 		led_control(False)
-		cpu_level(False)
+		#cpu_level(False)
 		radio_state(False)
 		freeze_apps()
 	suspended = not suspended
