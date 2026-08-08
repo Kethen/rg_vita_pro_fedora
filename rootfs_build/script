@@ -62,6 +62,10 @@ then
 	# need to work around qt rendering for nextcloud
 	mkdir -p staging/usr/local/bin/
 	cp /work_dir/rootfs_build/nextcloud staging/usr/local/bin/
+
+	# fake suspend does not work well with rtkit, eg. pipewire can get killed on wake
+	# this causes audio stuttering however when system is under heavy load
+	ln -s /dev/null staging/etc/systemd/system/rtkit-daemon.service
 fi
 
 # controller conversion
