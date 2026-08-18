@@ -23,6 +23,9 @@ RUN dnf install -y 'NetworkManager*'
 
 RUN dnf install -y firefox nextcloud-client vlc
 
+# install firewalld
+RUN dnf install -y firewalld
+
 # zram
 RUN dnf install -y zram
 RUN systemctl enable zram-swap
