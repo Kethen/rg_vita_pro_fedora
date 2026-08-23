@@ -474,7 +474,7 @@ int main(int argc, char **argv){
 		}else{
 			printf("usage:\n");
 			printf("driver mode: %s\n", argv[0]);
-			printf("calibration mode: %s calibration\n", argv[0]);
+			printf("calibration mode: %s calibrate\n", argv[0]);
 			exit(1);
 		}
 	}
