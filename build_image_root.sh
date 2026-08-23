@@ -46,6 +46,9 @@ cp -r boot_partition_prebuilt/* boot_partition/
 
 cp jumper_cable.img boot_partition/SYSTEM
 md5sum boot_partition/SYSTEM > boot_partition/SYSTEM.md5
+cp kernel_build/rk3576-anbernic-rg-vita-pro.dtb boot_partition/device_trees/rk3576-anbernic-rg-vita-pro.dtb
+cp kernel_build/kernel_image boot_partition/KERNEL
+md5sum boot_partition/KERNEL > boot_partition/KERNEL.md5
 
 umount boot_partition
 

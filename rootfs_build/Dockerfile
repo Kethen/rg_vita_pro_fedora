@@ -26,6 +26,10 @@ RUN dnf install -y firefox nextcloud-client vlc
 # install firewalld
 RUN dnf install -y firewalld
 
+# install podman
+RUN dnf install -y podman
+
 # zram
 RUN dnf install -y zram
 RUN systemctl enable zram-swap
+
