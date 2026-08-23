@@ -1,0 +1,10 @@
+set -xe
+
+dtc -I dtb -O dts rk3576-anbernic-rg-vita-pro-orig.dtb -o ./rk3576-anbernic-rg-vita-pro.dts
+
+sed -i 's/abs-x-max = <0x61a8>;/abs-x-max = <32768>;/' ./rk3576-anbernic-rg-vita-pro.dts
+sed -i 's/abs-y-max = <0x61a8>;/abs-y-max = <32768>;/' ./rk3576-anbernic-rg-vita-pro.dts
+sed -i 's/abs-rx-max = <0x61a8>;/abs-rx-max = <32768>;/' ./rk3576-anbernic-rg-vita-pro.dts
+sed -i 's/abs-ry-max = <0x61a8>;/abs-ry-max = <32768>;/' ./rk3576-anbernic-rg-vita-pro.dts
+
+dtc -I dts -O dtb ./rk3576-anbernic-rg-vita-pro.dts -o ./rk3576-anbernic-rg-vita-pro.dtb

@@ -1,0 +1,18 @@
+set -xe
+
+cd /rocknix_dir
+export PROJECT=ROCKNIX DEVICE=RK3576 ARCH=aarch64
+./scripts/clean linux
+./scripts/clean linux-drivers
+./scripts/build linux
+./scripts/build linux-drivers
+
+# TODO don't include the rocknix ramdisk so that the jumper cable can be skiped
+rm -rf /work_dir/usr
+mkdir -p /work_dir/usr/lib
+cp -r build.ROCKNIX-RK3576.aarch64/install_pkg/linux-7.0.2/.image/Image /work_dir/kernel_image
+cp -r build.ROCKNIX-RK3576.aarch64/install_pkg/linux-7.0.2/usr/lib/kernel-overlays/base/lib/modules /work_dir/usr/lib
+cp -r build.ROCKNIX-RK3576.aarch64/install_pkg/mali-bifrost-39da994bb6fc8819e5e8c1873907dd21d17e53c1/usr/lib/kernel-overlays/base/lib/modules /work_dir/usr/lib
+
+sudo apt update; sudo apt install -y kmod
+depmod -b /work_dir/usr 7.0.2

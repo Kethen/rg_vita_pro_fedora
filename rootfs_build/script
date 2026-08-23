@@ -8,7 +8,8 @@ passwd -l root
 systemctl set-default graphical.target
 
 mkdir staging
-tar -cO afs bin boot etc home lib lib64 media opt root run sbin srv usr var | tar -C staging -x
+#tar -cO afs bin boot etc home lib lib64 media opt root run sbin srv usr var | tar -C staging -x
+cp -a afs bin boot etc home lib lib64 media opt root run sbin srv usr var staging/
 
 for f in dev mnt proc sys tmp
 do
@@ -19,8 +20,9 @@ done
 cp /work_dir/ext/armbian_build/config/optional/boards/anbernic-rg-vita-pro/_packages/bsp-cli/etc/udev/rules.d/60-vita-joypad-not-accel.rules staging/etc/udev/rules.d/
 
 # kernel modules
-cp -r /work_dir/rootfs_build/rocknix_modules_prebuilt/7.0.2 staging/usr/lib/modules/
-cp -r /work_dir/rootfs_build/anbernic_modules_prebuilt/6.1.99 staging/usr/lib/modules/
+#cp -r /work_dir/rootfs_build/rocknix_modules_prebuilt/7.0.2 staging/usr/lib/modules/
+#cp -r /work_dir/rootfs_build/anbernic_modules_prebuilt/6.1.99 staging/usr/lib/modules/
+cp -r /work_dir/kernel_build/usr/lib/modules/7.0.2 staging/usr/lib/modules/
 
 # bluetooth firmware
 cp -r /work_dir/ext/rocknix_distribution/projects/ROCKNIX/packages/linux-firmware/kernel-firmware/extra-firmware/rtl_bt/rtl8852bs_* staging/usr/lib/firmware/rtl_bt/
@@ -73,11 +75,6 @@ cp /work_dir/rootfs_build/vita_controller.service staging/etc/systemd/system/
 cp /work_dir/rootfs_build/vita_controller staging/usr/libexec/
 mkdir -p staging/etc/systemd/user/graphical-session.target.wants
 ln -s /etc/systemd/system/vita_controller.service staging/etc/systemd/user/graphical-session.target.wants/
-
-# need to figure out proper kernel building to enable user ns
-cp /usr/lib/systemd/system/upower.service staging/etc/systemd/system/
-sed -i 's/PrivateUsers=yes/#PrivateUsers=yes/' staging/etc/systemd/system/upower.service 
-sed -i 's/RestrictNamespaces=yes/#RestrictNamespaces=yes/' staging/etc/systemd/system/upower.service
 
 cd staging
 tar -cf ../work_dir/rootfs.tar .
