@@ -11,7 +11,7 @@ IMAGE_TAG="rg_vita_pro_fedora_dtc_builder"
 
 if ! podman image exists "$IMAGE_TAG"
 then
-	podman image build -t "$IMAGE_TAG" -f docker_file_dtc --arch amd64
+	podman image build -t "$IMAGE_TAG" -f docker_file_dtc --arch $(podman info | grep OsArch | sed -E 's#\s+OsArch: linux/##')
 fi
 
 bash prep
@@ -24,3 +24,5 @@ podman run \
 	--entrypoint /bin/bash \
 	"$IMAGE_TAG" \
 	script_dtc
+
+bash cleanup

@@ -1,0 +1,37 @@
+name: Build package
+
+on: [ push, pull_request, workflow_dispatch ]
+
+jobs:
+  build_pkg:
+    runs-on: ubuntu-26.04
+    steps:
+
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+
+    - name: Install podman
+      run: |
+        sudo apt install -y podman qemu-user-binfmt
+
+    - name: Set env vars
+      run: |
+        echo "sha_name=$(echo ${GITHUB_SHA} | cut -c1-8)" >> $GITHUB_ENV
+        echo "PSPDEV=${GITHUB_WORKSPACE}/pspdev" >> $GITHUB_ENV
+        echo "${GITHUB_WORKSPACE}/pspdev/bin" >> $GITHUB_PATH
+
+    - name: Build
+      run: |
+        sudo chown -R $(id -u):$(id -g) ext
+        bash kernel_build/build_kernel_and_dtc.sh
+        bash rootfs_build/build_rootfs.sh
+        bash build_image.sh
+
+    - name: Push package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: rg_vita_pro_fedora_${{ env.sha_name }}
+        path: fedora.img
+        if-no-files-found: error

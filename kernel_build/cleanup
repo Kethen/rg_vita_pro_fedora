@@ -1,0 +1,5 @@
+set -xe
+
+cd "$rocknix_dir"
+git checkout .
+git clean -fd .

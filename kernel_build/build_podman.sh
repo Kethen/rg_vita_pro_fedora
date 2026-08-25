@@ -18,5 +18,9 @@ podman run \
 	-w /work_dir \
 	--entrypoint /bin/bash \
 	--userns keep-id:uid=$(id -u),gid=$(id -g) \
+	--security-opt apparmor=unconfined \
+	--security-opt label=disable \
 	"$IMAGE_TAG" \
 	script
+
+bash cleanup
