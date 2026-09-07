@@ -48,27 +48,12 @@ ln -s /etc/systemd/user/suspend_dpms_hotfix.service staging/etc/systemd/user/gra
 cp /work_dir/rootfs_build/fake_suspend.py staging/usr/libexec
 cp /work_dir/rootfs_build/fake_suspend.service staging/etc/systemd/system/
 
-if true
-then
-	# libmali setup
-	cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/* staging/
-	cp /work_dir/rootfs_build/libmali.service staging/etc/systemd/system/
-	cp /work_dir/rootfs_build/libmali.sh staging/usr/libexec/
-	mkdir -p staging/etc/systemd/system/multi-user.target.wants
-	ln -s /etc/systemd/system/libmali.service staging/etc/systemd/system/multi-user.target.wants/
-
-	# cannot suspend properly with mali_kbase loaded
-	rm staging/etc/systemd/user/graphical-session.target.wants/suspend_dpms_hotfix.service
-	ln -s /etc/systemd/system/fake_suspend.service staging/etc/systemd/system/systemd-suspend.service
-
-	# need to work around qt rendering for nextcloud
-	mkdir -p staging/usr/local/bin/
-	cp /work_dir/rootfs_build/nextcloud staging/usr/local/bin/
-
-	# fake suspend does not work well with rtkit, eg. pipewire can get killed on wake
-	# this causes audio stuttering however when system is under heavy load
-	ln -s /dev/null staging/etc/systemd/system/rtkit-daemon.service
-fi
+# libmali
+cp /work_dir/rootfs_build/libmali.service staging/etc/systemd/system/
+cp /work_dir/rootfs_build/libmali.sh staging/usr/libexec/
+cp /work_dir/rootfs_build/libmali_toggle.sh staging/usr/bin
+cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/usr staging/
+cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/etc staging/usr/share/libmali_etc
 
 # controller conversion
 cp /work_dir/rootfs_build/vita_controller.service staging/etc/systemd/system/
