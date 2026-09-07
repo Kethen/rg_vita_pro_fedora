@@ -1,0 +1,8 @@
+[Unit]
+Description="oneshot rootfs expand"
+
+[Service]
+ExecStart=/bin/bash /usr/libexec/expand_root.sh
+
+[Install]
+WantedBy=multi-user.target

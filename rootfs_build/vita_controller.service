@@ -1,0 +1,10 @@
+[Unit]
+Description=rg vita controller to x360
+
+[Service]
+ExecStart=/usr/libexec/vita_controller
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

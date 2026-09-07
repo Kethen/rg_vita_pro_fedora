@@ -4,7 +4,6 @@ rm -f fedora.img
 
 BOOT_START=32768
 BOOT_SIZE=$((100 * 1024 * 1024 / 512))
-BOOT_END=$((32768 + BOOT_SIZE))
 
 fallocate fedora.img -l 10G
 

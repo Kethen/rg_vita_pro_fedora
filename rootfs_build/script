@@ -56,10 +56,17 @@ cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/usr staging/
 cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/etc staging/usr/share/libmali_etc
 
 # controller conversion
+dnf install -y g++
+g++ -g -O2 /work_dir/rootfs_build/vita_controller.cpp -o staging/usr/libexec/vita_controller
 cp /work_dir/rootfs_build/vita_controller.service staging/etc/systemd/system/
-cp /work_dir/rootfs_build/vita_controller staging/usr/libexec/
-mkdir -p staging/etc/systemd/user/graphical-session.target.wants
-ln -s /etc/systemd/system/vita_controller.service staging/etc/systemd/user/graphical-session.target.wants/
+mkdir -p staging/etc/systemd/system/graphical.target.wants
+ln -s /etc/systemd/system/vita_controller.service staging/etc/systemd/system/graphical.target.wants/
+
+# expand rootfs on first boot
+cp /work_dir/rootfs_build/expand_root.sh staging/usr/libexec/
+cp /work_dir/rootfs_build/expand_root.service staging/etc/systemd/system/
+mkdir -p staging/etc/systemd/system/multi-user.target.wants
+ln -s /etc/systemd/system/expand_root.service staging/etc/systemd/system/multi-user.target.wants/
 
 cd staging
 tar -cf ../work_dir/rootfs.tar .
