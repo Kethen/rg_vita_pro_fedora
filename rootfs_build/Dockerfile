@@ -15,13 +15,13 @@ RUN dnf install -y busybox linux-firmware procps-ng iproute bash-completion fdis
 # DE
 RUN dnf group install -y gnome-desktop
 RUN dnf install -y 'NetworkManager*'
+RUN dnf install -y gnome-extensions-app gnome-shell-extension-appindicator gnome-tweaks
 
 # install desktop apps
-# can't really use flatpak until userns is figured out, aka proper kernel building instead of using prebuilt kernel
-#RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-#RUN flatpak install flathub -y org.mozilla.firefox org.videolan.VLC
+RUN flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+RUN flatpak install flathub -y org.mozilla.firefox org.videolan.VLC com.nextcloud.desktopclient.nextcloud
 
-RUN dnf install -y firefox nextcloud-client vlc
+#RUN dnf install -y firefox nextcloud-client vlc
 
 # install firewalld
 RUN dnf install -y firewalld

@@ -30,7 +30,7 @@ else
 	reboot
 fi
 
-mount -t ext4 $boot_target /next_root
+mount -o compress-force=zstd:9 $boot_target /next_root
 
 if $DEBUG
 then
