@@ -25,9 +25,7 @@ jobs:
     - name: Build
       run: |
         sudo chown -R $(id -u):$(id -g) ext
-        bash kernel_build/build_kernel_and_dtc.sh
-        bash rootfs_build/build_rootfs.sh
-        bash build_image.sh
+        bash build_all.sh
 
     - name: Push package artifact
       uses: actions/upload-artifact@v4
