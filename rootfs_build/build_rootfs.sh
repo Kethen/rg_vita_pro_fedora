@@ -6,6 +6,13 @@ cd "$script_dir"
 
 IMAGE_TAG=rg_vita_pro_fedora_rootfs
 
+REBUILD_IMAGE=${REBUILD_IMAGE:-false}
+
+if $REBUILD_IMAGE
+then
+	podman image rm -f $IMAGE_TAG
+fi
+
 if ! podman image exists $IMAGE_TAG
 then
 	podman image build -t $IMAGE_TAG -f Dockerfile --arch aarch64

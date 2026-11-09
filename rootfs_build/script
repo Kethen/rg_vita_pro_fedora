@@ -22,7 +22,7 @@ cp /work_dir/ext/armbian_build/config/optional/boards/anbernic-rg-vita-pro/_pack
 # kernel modules
 #cp -r /work_dir/rootfs_build/rocknix_modules_prebuilt/7.0.2 staging/usr/lib/modules/
 #cp -r /work_dir/rootfs_build/anbernic_modules_prebuilt/6.1.99 staging/usr/lib/modules/
-cp -r /work_dir/kernel_build/usr/lib/modules/7.0.2 staging/usr/lib/modules/
+cp -r /work_dir/kernel_build/usr/lib/modules/7.2.11 staging/usr/lib/modules/
 
 # bluetooth firmware
 cp -r /work_dir/ext/rocknix_distribution/projects/ROCKNIX/packages/linux-firmware/kernel-firmware/extra-firmware/rtl_bt/rtl8852bs_* staging/usr/lib/firmware/rtl_bt/
@@ -52,7 +52,7 @@ cp /work_dir/rootfs_build/fake_suspend.service staging/etc/systemd/system/
 cp /work_dir/rootfs_build/libmali.service staging/etc/systemd/system/
 cp /work_dir/rootfs_build/libmali.sh staging/usr/libexec/
 cp /work_dir/rootfs_build/libmali_toggle.sh staging/usr/bin
-cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/usr staging/
+cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/usr staging/usr/share/libmali_usr
 cp -r /work_dir/rootfs_build/libmali_g29_prebuilt/etc staging/usr/share/libmali_etc
 
 # controller conversion

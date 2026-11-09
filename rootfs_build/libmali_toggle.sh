@@ -3,7 +3,8 @@
 set -xe
 
 libmali_on () {
-	cp -r /usr/share/libmali_etc/* /etc
+	cp -a /usr/share/libmali_etc/* /etc
+	cp -a /usr/share/libmali_usr/* /usr
 	ldconfig
 
 	mkdir -p /etc/systemd/system/multi-user.target.wants
@@ -26,6 +27,17 @@ libmali_off () {
 			rm "$path"
 		fi
 	done <<< $(find /usr/share/libmali_etc)
+
+	while read -r LINE
+	do
+		path="$(echo $LINE | sed 's#/usr/share/libmali_usr##')"
+		path="/usr/$path"
+		if [ -f "$path" ]
+		then
+			rm "$path"
+		fi
+	done <<< $(find /usr/share/libmali_usr)
+
 	ldconfig
 
 	mkdir -p /etc/systemd/user/graphical-session.target.wants
