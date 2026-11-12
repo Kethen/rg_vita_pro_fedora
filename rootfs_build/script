@@ -11,6 +11,9 @@ mkdir staging
 #tar -cO afs bin boot etc home lib lib64 media opt root run sbin srv usr var | tar -C staging -x
 cp -a afs bin boot etc home lib lib64 media opt root run sbin srv usr var staging/
 
+# avoid systemd flagging the device as a container
+rm staging/run/.containerenv
+
 for f in dev mnt proc sys tmp
 do
 	mkdir staging/$f
